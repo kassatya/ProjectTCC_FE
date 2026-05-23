@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kelola Lapangan — Futsal Admin</title>
+    <link rel="stylesheet" href="shared.css" />
+    <style>
+        .layout-cols {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 24px;
+            align-items: start;
+        }
+
+        @media (max-width: 1100px) {
+            .layout-cols {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .field-type-badge {
+            padding: 4px 12px;
+            border-radius: 99px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .field-type-badge.sintetis {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .field-type-badge.rumput {
+            background: var(--green-100);
+            color: var(--green-800);
+        }
+
+        .field-type-badge.futsal {
+            background: #ede9fe;
+            color: #6d28d9;
+        }
+
+        .field-type-badge.other {
+            background: var(--gray-100);
+            color: var(--gray-600);
+        }
+
+        .price-tag {
+            font-weight: 700;
+            color: var(--green-700);
+            font-size: 14px;
+        }
+
+        .form-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--gray-900);
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--gray-100);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .form-panel {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: calc(var(--header-h) + 28px);
+        }
+
+        .form-panel-body {
+            padding: 20px 24px 24px;
+        }
+
+        .form-mode-badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .form-mode-badge.add {
+            background: var(--green-100);
+            color: var(--green-800);
+        }
+
+        .form-mode-badge.edit {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .row-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .empty-table {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--gray-400);
+        }
+
+        .empty-table .empty-icon {
+            font-size: 40px;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">⚽</div>
+            <h1>FUTSAL<br>ADMIN</h1>
+            <p>Panel Pengelola</p>
+        </div>
+        <nav class="sidebar-nav">
+            <span class="nav-section-label">Menu Utama</span>
+            <a href="kalender.html" class="nav-link">
+                <span class="nav-icon">📅</span>
+                <span>Kalender Booking</span>
+            </a>
+            <a href="lapangan.html" class="nav-link active">
+                <span class="nav-icon">🏟️</span>
+                <span>Kelola Lapangan</span>
+            </a>
+            <a href="konfirmasi-dp.html" class="nav-link">
+                <span class="nav-icon">💰</span>
+                <span>Konfirmasi DP</span>
+            </a>
+            <a href="index.html" class="nav-link">
+                <span class="nav-icon">👥</span>
+                <span>Data User</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">v1.0.0 &copy; Futsal Admin</div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main-wrapper">
+        <header class="page-header">
+            <div class="page-header-left">
+                <h2>Kelola Lapangan</h2>
+                <p>Tambah, edit, dan hapus data lapangan futsal</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="loadLapangan()">🔄 Refresh</button>
+        </header>
+
+        <main class="page-content">
+            <!-- Stats -->
+            <div class="stats-grid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr));">
+                <div class="stat-card">
+                    <div class="stat-icon green">🏟️</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="statTotal">—</div>
+                        <div class="stat-label">Total Lapangan</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon blue" style="background:#dbeafe;">🌿</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="statRumput">—</div>
+                        <div class="stat-label">Rumput Asli</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon yellow">⚡</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="statSintetis">—</div>
+                        <div class="stat-label">Sintetis</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Layout: Table + Form -->
+            <div class="layout-cols">
+                <!-- Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Daftar Lapangan</span>
+                        <span id="lapanganCount" style="font-size:12px;color:var(--gray-400);">0 lapangan</span>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Nama Lapangan</th>
+                                    <th>Jenis Rumput</th>
+                                    <th>Harga/Jam</th>
+                                    <th style="width:130px;">Opsi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lapanganTableBody">
+                                <tr>
+                                    <td colspan="5">
+                                        <div class="empty-table">
+                                            <div class="empty-icon">⏳</div>
+                                            <p>Memuat data lapangan...</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Form Panel -->
+                <div class="form-panel">
+                    <div class="form-title">
+                        <span id="formPanelTitle">Tambah Lapangan</span>
+                        <span class="form-mode-badge add" id="formModeBadge">Baru</span>
+                    </div>
+                    <div class="form-panel-body">
+                        <div class="form-group">
+                            <label class="form-label">Nama Lapangan <span style="color:var(--red-500);">*</span></label>
+                            <input class="form-control" id="fieldNamaLapangan" type="text"
+                                placeholder="Contoh: Lapangan A" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Jenis Rumput <span style="color:var(--red-500);">*</span></label>
+                            <select class="form-control" id="fieldJenisRumput">
+                                <option value="">-- Pilih Jenis --</option>
+                                <option value="Sintetis">Sintetis</option>
+                                <option value="Rumput Asli">Rumput Asli</option>
+                                <option value="Parquet">Parquet / Kayu</option>
+                                <option value="Vinyl">Vinyl</option>
+                                <option value="Semen">Semen / Aspal</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Harga per Jam (Rp) <span
+                                    style="color:var(--red-500);">*</span></label>
+                            <input class="form-control" id="fieldHarga" type="number" placeholder="Contoh: 150000"
+                                min="0" step="1000" />
+                        </div>
+                        <div style="display:flex;gap:10px;margin-top:8px;">
+                            <button class="btn btn-secondary" style="flex:1;" onclick="resetForm()">Reset</button>
+                            <button class="btn btn-primary" style="flex:2;" onclick="saveLapangan()">
+                                <span id="saveButtonText">✅ Simpan</span>
+                            </button>
+                        </div>
+                        <div id="editingInfo"
+                            style="display:none;margin-top:12px;padding:10px;background:var(--green-50);border-radius:8px;font-size:12px;color:var(--green-700);">
+                            ✏️ Mode edit aktif. Klik Reset untuk membatalkan.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL DELETE -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal" style="max-width:400px;">
+            <div class="modal-header">
+                <span class="modal-title">Hapus Lapangan</span>
+                <button class="modal-close" onclick="closeModal('deleteModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <p style="color:var(--gray-600);">Apakah kamu yakin ingin menghapus lapangan <strong
+                        id="deleteLapanganName"></strong>?</p>
+                <p style="color:var(--red-500);margin-top:8px;font-size:13px;">⚠️ Semua data booking di lapangan ini
+                    mungkin ikut terpengaruh.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('deleteModal')">Batal</button>
+                <button class="btn btn-danger" onclick="confirmDelete()">🗑️ Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="shared.js"></script>
+    <script src="lapangan.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kalender Booking — Futsal Admin</title>
+    <link rel="stylesheet" href="shared.css" />
+    <style>
+        /* ---- View Toggle ---- */
+        .view-toggle {
+            display: inline-flex;
+            background: var(--gray-100);
+            border-radius: 10px;
+            padding: 3px;
+            gap: 2px;
+        }
+
+        .view-toggle button {
+            padding: 7px 18px;
+            border-radius: 8px;
+            border: none;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: var(--gray-500);
+            background: transparent;
+            transition: all .2s;
+        }
+
+        .view-toggle button.active {
+            background: var(--white);
+            color: var(--green-700);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, .1);
+        }
+
+        /* ---- Calendar Nav ---- */
+        .cal-nav {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .cal-nav button {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            background: var(--gray-100);
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .2s;
+        }
+
+        .cal-nav button:hover {
+            background: var(--gray-200);
+        }
+
+        .cal-nav .cal-label {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--gray-900);
+            min-width: 180px;
+            text-align: center;
+        }
+
+        /* ---- Lapangan Selector ---- */
+        .lapangan-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .lapangan-tab {
+            padding: 8px 16px;
+            border-radius: 99px;
+            border: 1.5px solid var(--gray-200);
+            background: var(--white);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--gray-600);
+            transition: all .2s;
+        }
+
+        .lapangan-tab:hover {
+            border-color: var(--green-400);
+            color: var(--green-700);
+        }
+
+        .lapangan-tab.active {
+            background: var(--green-600);
+            border-color: var(--green-600);
+            color: var(--white);
+            box-shadow: 0 2px 8px rgba(16, 185, 129, .3);
+        }
+
+        /* ---- MONTHLY CALENDAR ---- */
+        .monthly-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .cal-day-header {
+            background: var(--gray-50);
+            padding: 10px 6px;
+            text-align: center;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            color: var(--gray-500);
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .cal-cell {
+            min-height: 110px;
+            padding: 8px;
+            border-right: 1px solid var(--gray-100);
+            border-bottom: 1px solid var(--gray-100);
+            background: var(--white);
+            vertical-align: top;
+            position: relative;
+        }
+
+        .cal-cell:nth-child(7n) {
+            border-right: none;
+        }
+
+        .cal-cell.other-month {
+            background: var(--gray-50);
+        }
+
+        .cal-cell.today {
+            background: var(--green-50);
+        }
+
+        .cal-date {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--gray-700);
+            margin-bottom: 6px;
+        }
+
+        .cal-cell.today .cal-date {
+            background: var(--green-600);
+            color: #fff;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .cal-event {
+            display: block;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 2px;
+            cursor: pointer;
+            transition: filter .15s;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .cal-event:hover {
+            filter: brightness(0.92);
+        }
+
+        .cal-event.PAID_DP {
+            background: var(--green-100);
+            color: var(--green-800);
+        }
+
+        .cal-event.PENDING_PAYMENT {
+            background: var(--yellow-100);
+            color: var(--yellow-800);
+        }
+
+        .cal-event.BLOCKED {
+            background: var(--pink-100);
+            color: var(--pink-800);
+        }
+
+        /* ---- WEEKLY CALENDAR ---- */
+        .weekly-wrapper {
+            overflow-x: auto;
+        }
+
+        .weekly-grid {
+            display: grid;
+            grid-template-columns: 60px repeat(7, 1fr);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            overflow: hidden;
+            min-width: 700px;
+        }
+
+        .week-header-cell {
+            background: var(--gray-50);
+            padding: 12px 8px;
+            text-align: center;
+            border-bottom: 1px solid var(--gray-200);
+            border-right: 1px solid var(--gray-100);
+        }
+
+        .week-header-cell:last-child {
+            border-right: none;
+        }
+
+        .week-day-name {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--gray-400);
+            text-transform: uppercase;
+            letter-spacing: .6px;
+        }
+
+        .week-day-num {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--gray-800);
+            line-height: 1.1;
+        }
+
+        .week-day-num.today-num {
+            background: var(--green-600);
+            color: #fff;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            font-size: 16px;
+        }
+
+        .week-time-col {
+            background: var(--gray-50);
+            border-right: 1px solid var(--gray-200);
+        }
+
+        .week-time-slot {
+            height: 60px;
+            padding: 4px 8px;
+            border-bottom: 1px solid var(--gray-100);
+            font-size: 11px;
+            color: var(--gray-400);
+            font-weight: 600;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .week-day-col {
+            border-right: 1px solid var(--gray-100);
+            position: relative;
+        }
+
+        .week-day-col:last-child {
+            border-right: none;
+        }
+
+        .week-slot {
+            height: 60px;
+            border-bottom: 1px solid var(--gray-100);
+            position: relative;
+            transition: background .15s;
+        }
+
+        .week-slot:hover {
+            background: var(--green-50);
+        }
+
+        .week-booking-block {
+            position: absolute;
+            left: 3px;
+            right: 3px;
+            border-radius: 5px;
+            padding: 3px 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            overflow: hidden;
+            transition: filter .15s;
+            z-index: 2;
+        }
+
+        .week-booking-block:hover {
+            filter: brightness(0.92);
+        }
+
+        .week-booking-block.PAID_DP {
+            background: var(--green-100);
+            color: var(--green-800);
+            border-left: 3px solid var(--green-500);
+        }
+
+        .week-booking-block.PENDING_PAYMENT {
+            background: var(--yellow-100);
+            color: var(--yellow-800);
+            border-left: 3px solid var(--yellow-400);
+        }
+
+        .week-booking-block.BLOCKED {
+            background: var(--pink-100);
+            color: var(--pink-800);
+            border-left: 3px solid var(--pink-400);
+        }
+
+        /* ---- Legend ---- */
+        .legend {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+        }
+
+        .legend-dot.green {
+            background: var(--green-400);
+        }
+
+        .legend-dot.yellow {
+            background: var(--yellow-400);
+        }
+
+        .legend-dot.pink {
+            background: var(--pink-400);
+        }
+
+        /* ---- Booking Detail Modal ---- */
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--gray-100);
+            font-size: 13.5px;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: var(--gray-500);
+        }
+
+        .detail-value {
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+
+        .dp-form {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--gray-200);
+        }
+
+        .dp-form .form-label {
+            font-size: 13px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">⚽</div>
+            <h1>FUTSAL<br>ADMIN</h1>
+            <p>Panel Pengelola</p>
+        </div>
+        <nav class="sidebar-nav">
+            <span class="nav-section-label">Menu Utama</span>
+            <a href="kalender.html" class="nav-link active">
+                <span class="nav-icon">📅</span>
+                <span>Kalender Booking</span>
+            </a>
+            <a href="lapangan.html" class="nav-link">
+                <span class="nav-icon">🏟️</span>
+                <span>Kelola Lapangan</span>
+            </a>
+            <a href="konfirmasi-dp.html" class="nav-link">
+                <span class="nav-icon">💰</span>
+                <span>Konfirmasi DP</span>
+            </a>
+            <a href="index.html" class="nav-link">
+                <span class="nav-icon">👥</span>
+                <span>Data User</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">v1.0.0 &copy; Futsal Admin</div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main-wrapper">
+        <header class="page-header">
+            <div class="page-header-left">
+                <h2>Kalender Booking</h2>
+                <p>Lihat semua jadwal reservasi lapangan</p>
+            </div>
+            <div style="display:flex;gap:12px;align-items:center;">
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-dot green"></div>DP Terbayar
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot yellow"></div>Pending
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot pink"></div>Diblokir
+                    </div>
+                </div>
+                <div class="view-toggle">
+                    <button id="btnMonthly" class="active" onclick="switchView('monthly')">Bulanan</button>
+                    <button id="btnWeekly" onclick="switchView('weekly')">Mingguan</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="page-content">
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon blue">📋</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="statTotalBooking">—</div>
+                        <div class="stat-label">Total Booking</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green">✅</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="statTerboking">—</div>
+                        <div class="stat-label">DP Terbayar</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon yellow">⏳</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="statPending">—</div>
+                        <div class="stat-label">Pending</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon pink" style="background:var(--pink-100);">🚫</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="statBlocked">—</div>
+                        <div class="stat-label">Diblokir</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lapangan Tabs -->
+            <div class="lapangan-tabs" id="lapanganTabs">
+                <div class="lapangan-tab active" onclick="selectLapangan(null, this)">Semua</div>
+            </div>
+
+            <!-- Calendar Nav -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="cal-nav">
+                        <button onclick="navigate(-1)">‹</button>
+                        <span class="cal-label" id="calLabel">—</span>
+                        <button onclick="navigate(1)">›</button>
+                        <button class="btn btn-secondary btn-sm" onclick="goToday()" style="margin-left:6px;">Hari
+                            ini</button>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="loadCalendar()">🔄 Refresh</button>
+                </div>
+
+                <!-- Monthly View -->
+                <div id="monthlyView" class="card-body" style="padding:16px;">
+                    <div class="monthly-grid" id="monthlyGrid">
+                        <!-- injected by JS -->
+                    </div>
+                </div>
+
+                <!-- Weekly View -->
+                <div id="weeklyView" class="card-body" style="padding:16px;display:none;">
+                    <div class="weekly-wrapper">
+                        <div class="weekly-grid" id="weeklyGrid">
+                            <!-- injected by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL BOOKING DETAIL -->
+    <div class="modal-overlay" id="bookingModal">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">Detail Booking</span>
+                <button class="modal-close" onclick="closeModal('bookingModal')">✕</button>
+            </div>
+            <div class="modal-body" id="bookingModalBody">
+                <!-- injected -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('bookingModal')">Tutup</button>
+                <button class="btn btn-primary" id="btnKonfirmasiDP" onclick="submitKonfirmasiDP()"
+                    style="display:none;">✅ Konfirmasi DP</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="shared.js"></script>
+    <script src="kalender.js"></script>
+</body>
+
+</html>

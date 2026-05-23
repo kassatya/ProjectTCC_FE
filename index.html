@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data User — Futsal Admin</title>
+  <link rel="stylesheet" href="shared.css" />
+  <style>
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--green-500), var(--green-700));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 13px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .user-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .user-name {
+      font-weight: 600;
+      color: var(--gray-800);
+    }
+
+    .user-email {
+      font-size: 12px;
+      color: var(--gray-400);
+    }
+
+    .search-box {
+      position: relative;
+    }
+
+    .search-box input {
+      padding-left: 36px !important;
+    }
+
+    .search-box .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--gray-400);
+      font-size: 14px;
+    }
+
+    .btn-reset-port {
+      padding: 8px 14px;
+      border-radius: 8px;
+      background: var(--gray-100);
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: var(--gray-600);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all .2s;
+    }
+
+    .btn-reset-port:hover {
+      background: var(--gray-200);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">⚽</div>
+      <h1>FUTSAL<br>ADMIN</h1>
+      <p>Panel Pengelola</p>
+    </div>
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">Menu Utama</span>
+      <a href="kalender.html" class="nav-link">
+        <span class="nav-icon">📅</span>
+        <span>Kalender Booking</span>
+      </a>
+      <a href="lapangan.html" class="nav-link">
+        <span class="nav-icon">🏟️</span>
+        <span>Kelola Lapangan</span>
+      </a>
+      <a href="konfirmasi-dp.html" class="nav-link">
+        <span class="nav-icon">💰</span>
+        <span>Konfirmasi DP</span>
+      </a>
+      <a href="index.html" class="nav-link active">
+        <span class="nav-icon">👥</span>
+        <span>Data User</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">v1.0.0 &copy; Futsal Admin</div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-wrapper">
+    <header class="page-header">
+      <div class="page-header-left">
+        <h2>Data User</h2>
+        <p>Manajemen pengguna sistem</p>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button class="btn-reset-port" onclick="resetPort()">🔧 Ganti Port</button>
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input class="form-control" id="searchInput" type="text" placeholder="Cari user..." oninput="filterUsers()"
+            style="width:220px;" />
+        </div>
+        <button class="btn btn-primary" onclick="openAddModal()">+ Tambah User</button>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <!-- Stats -->
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card">
+          <div class="stat-icon blue">👥</div>
+          <div class="stat-info">
+            <div class="stat-value" id="statTotal">—</div>
+            <div class="stat-label">Total User</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green">✅</div>
+          <div class="stat-info">
+            <div class="stat-value" id="statActive">—</div>
+            <div class="stat-label">User Aktif</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon yellow">⏳</div>
+          <div class="stat-info">
+            <div class="stat-value" id="statNew">—</div>
+            <div class="stat-label">User Baru (30 hari)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Daftar Pengguna</span>
+          <button class="btn btn-secondary btn-sm" onclick="loadUsers()">🔄 Refresh</button>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Pengguna</th>
+                <th>No. HP</th>
+                <th>Terdaftar</th>
+                <th>Status</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="userTableBody">
+              <tr>
+                <td colspan="6">
+                  <div class="empty-state">
+                    <div class="empty-icon">⏳</div>
+                    <p>Memuat data...</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL ADD/EDIT USER -->
+  <div class="modal-overlay" id="userModal">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title" id="userModalTitle">Tambah User</span>
+        <button class="modal-close" onclick="closeModal('userModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Nama Lengkap</label>
+          <input class="form-control" id="fieldNama" type="text" placeholder="Masukkan nama lengkap" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-control" id="fieldEmail" type="email" placeholder="email@contoh.com" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">No. HP / WhatsApp</label>
+          <input class="form-control" id="fieldPhone" type="tel" placeholder="08xxxxxxxxxx" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-control" id="fieldPassword" type="password" placeholder="Password" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-control" id="fieldStatus">
+            <option value="ACTIVE">Aktif</option>
+            <option value="INACTIVE">Tidak Aktif</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('userModal')">Batal</button>
+        <button class="btn btn-primary" onclick="saveUser()">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CONFIRM DELETE -->
+  <div class="modal-overlay" id="deleteModal">
+    <div class="modal" style="max-width:400px;">
+      <div class="modal-header">
+        <span class="modal-title">Hapus User</span>
+        <button class="modal-close" onclick="closeModal('deleteModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="color:var(--gray-600);">Apakah kamu yakin ingin menghapus user <strong id="deleteUserName"></strong>?
+          Tindakan ini tidak dapat dibatalkan.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('deleteModal')">Batal</button>
+        <button class="btn btn-danger" onclick="confirmDelete()">Ya, Hapus</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="shared.js"></script>
+  <script src="index.js"></script>
+</body>
+
+</html>

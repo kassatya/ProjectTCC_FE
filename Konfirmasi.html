@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Konfirmasi DP — Futsal Admin</title>
+    <link rel="stylesheet" href="shared.css" />
+    <style>
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-bar .form-control {
+            width: auto;
+            min-width: 160px;
+        }
+
+        .pending-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--yellow-400);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 800;
+            min-width: 22px;
+            height: 22px;
+            border-radius: 99px;
+            padding: 0 6px;
+            margin-left: 6px;
+        }
+
+        /* DP Confirm inline form */
+        .dp-inline-form {
+            display: none;
+            background: var(--green-50);
+            border: 1.5px solid var(--green-300);
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-top: 8px;
+        }
+
+        .dp-inline-form.show {
+            display: block;
+        }
+
+        .dp-inline-inputs {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+        }
+
+        .dp-inline-inputs .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .alert-banner {
+            background: var(--yellow-100);
+            border: 1.5px solid var(--yellow-400);
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13.5px;
+            color: var(--yellow-800);
+            font-weight: 500;
+        }
+
+        .alert-banner .alert-icon {
+            font-size: 20px;
+        }
+
+        /* Progress bar for dp */
+        .dp-progress {
+            width: 100%;
+            height: 6px;
+            background: var(--gray-200);
+            border-radius: 99px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .dp-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--green-500), var(--green-400));
+            border-radius: 99px;
+            transition: width .4s;
+        }
+
+        .dp-percent {
+            font-size: 11px;
+            color: var(--gray-400);
+            margin-top: 2px;
+        }
+
+        tbody tr.expanding td {
+            padding: 0 !important;
+        }
+
+        .expand-wrapper {
+            padding: 0 16px 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">⚽</div>
+            <h1>FUTSAL<br>ADMIN</h1>
+            <p>Panel Pengelola</p>
+        </div>
+        <nav class="sidebar-nav">
+            <span class="nav-section-label">Menu Utama</span>
+            <a href="kalender.html" class="nav-link">
+                <span class="nav-icon">📅</span>
+                <span>Kalender Booking</span>
+            </a>
+            <a href="lapangan.html" class="nav-link">
+                <span class="nav-icon">🏟️</span>
+                <span>Kelola Lapangan</span>
+            </a>
+            <a href="konfirmasi-dp.html" class="nav-link active">
+                <span class="nav-icon">💰</span>
+                <span>Konfirmasi DP</span>
+            </a>
+            <a href="index.html" class="nav-link">
+                <span class="nav-icon">👥</span>
+                <span>Data User</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">v1.0.0 &copy; Futsal Admin</div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main-wrapper">
+        <header class="page-header">
+            <div class="page-header-left">
+                <h2>Konfirmasi DP <span id="pendingBadge" class="pending-count" style="display:none;">0</span></h2>
+                <p>Verifikasi pembayaran DP dari penyewa</p>
+            </div>
+            <div class="filter-bar">
+                <select class="form-control" id="filterLapangan" onchange="applyFilters()">
+                    <option value="">Semua Lapangan</option>
+                </select>
+                <input class="form-control" id="filterTanggal" type="date" onchange="applyFilters()"
+                    style="width:160px;" />
+                <button class="btn btn-secondary btn-sm" onclick="clearFilters()">Hapus Filter</button>
+                <button class="btn btn-primary btn-sm" onclick="loadPendingBookings()">🔄 Muat Ulang</button>
+            </div>
+        </header>
+
+        <main class="page-content">
+            <!-- Alert -->
+            <div class="alert-banner" id="alertBanner" style="display:none;">
+                <span class="alert-icon">⚠️</span>
+                <span>Terdapat <strong id="alertCount">0</strong> booking dengan status <em>Pending Payment</em> yang
+                    menunggu konfirmasi DP.</span>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon yellow">⏳</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="statPending">—</div>
+                        <div class="stat-label">Total Pending</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green">✅</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="statKonfirmasi">—</div>
+                        <div class="stat-label">Terkonfirmasi Hari Ini</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon blue" style="background:#dbeafe;">💵</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="statTotalDP">—</div>
+                        <div class="stat-label">Total DP Pending (Rp)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Booking Pending Pembayaran DP</span>
+                    <span id="tableCount" style="font-size:12px;color:var(--gray-400);">0 booking</span>
+                </div>
+                <div class="table-wrapper">
+                    <table id="pendingTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Lapangan</th>
+                                <th>Penyewa</th>
+                                <th>Tanggal</th>
+                                <th>Jam</th>
+                                <th>Total Harga</th>
+                                <th>DP Terbayar</th>
+                                <th>Status</th>
+                                <th style="width:140px;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pendingTableBody">
+                            <tr>
+                                <td colspan="9">
+                                    <div class="empty-state">
+                                        <div class="empty-icon">⏳</div>
+                                        <p>Memuat data booking...</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL KONFIRMASI DP -->
+    <div class="modal-overlay" id="dpModal">
+        <div class="modal" style="max-width:460px;">
+            <div class="modal-header">
+                <span class="modal-title">Konfirmasi Pembayaran DP</span>
+                <button class="modal-close" onclick="closeModal('dpModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div id="dpModalInfo"
+                    style="margin-bottom:16px;padding:12px;background:var(--gray-50);border-radius:8px;"></div>
+                <div class="form-group">
+                    <label class="form-label">Jumlah DP Diterima (Rp) <span
+                            style="color:var(--red-500);">*</span></label>
+                    <input class="form-control" id="modalJumlahDP" type="number" placeholder="Contoh: 100000" min="1" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Bukti Transfer / Nomor Referensi</label>
+                    <input class="form-control" id="modalBuktiTransfer" type="text"
+                        placeholder="Link foto atau nomor referensi bank" />
+                </div>
+                <div class="dp-progress" id="dpProgressBar" style="display:none;">
+                    <div class="dp-progress-bar" id="dpProgressFill" style="width:0%"></div>
+                </div>
+                <div class="dp-percent" id="dpProgressLabel"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('dpModal')">Batal</button>
+                <button class="btn btn-primary" onclick="submitDPFromModal()">✅ Konfirmasi DP</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="shared.js"></script>
+    <script src="konfirmasi-dp.js"></script>
+</body>
+
+</html>
