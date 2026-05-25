@@ -1,17 +1,9 @@
 // ===== SHARED UTILITIES - FUTSAL ADMIN =====
 
-// ---- Port / Base URL ----
-function getBaseUrl() {
-    let port = localStorage.getItem('futsal_port');
-    if (!port) {
-        port = prompt('Masukkan port backend (default: 3000):', '3000') || '3000';
-        localStorage.setItem('futsal_port', port);
-    }
-    return `http://localhost:${port}/api/v1`;
-}
+// ---- Base URL — ganti dengan URL Cloud Run GCP kamu ----
+const API_URL = "https://GANTI-DENGAN-URL-CLOUD-RUN.us-central1.run.app/api/v1";
 
-window.BASE_URL = getBaseUrl();
-window.api = axios.create({ baseURL: window.BASE_URL });
+window.api = axios.create({ baseURL: API_URL });
 
 // ---- Toast ----
 function showToast(message, type = 'success', duration = 3000) {

@@ -1,23 +1,13 @@
 // ===== DATA USER - index.js =====
-// Pola pemanggilan API mengikuti kode asli:
-// - port prompt langsung di DOMContentLoaded
-// - getApiBase() → /api/v1/users
-// - getUser(), tampilkanUser(), hapusUser(), editUser()
-// - elemen: #user-form, #name, #email, #table-user
-
-let port = 3000;
-
-const getApiBase = () => `http://localhost:${port}/api/v1/users`;
+// Pola pemanggilan mengikuti kode asli:
+// getUser(), tampilkanUser(), hapusUser(), editUser()
+// elemen: #user-form, #name, #email, #table-user
+// Base URL diambil dari shared.js (window.api)
 
 // ===== INIT =====
 document.addEventListener("DOMContentLoaded", () => {
-  const inputPort = prompt("Masukkan port Back-End\nPort default: 3000");
-  if (inputPort && inputPort.trim() !== "") {
-    port = inputPort.trim();
-  }
   getUser();
 
-  // Tutup modal kalau klik overlay
   document.querySelectorAll(".modal-overlay").forEach((overlay) => {
     overlay.addEventListener("click", (e) => {
       if (e.target === overlay) {
@@ -49,21 +39,17 @@ formulir.addEventListener("submit", async (e) => {
   setLoading(true);
   try {
     if (id === "") {
-      await axios.post(getApiBase(), { username, email });
+      await window.api.post("/users", { username, email });
       showToast(`User "${username}" berhasil ditambahkan. ✅`, "success");
     } else {
-      await axios.put(`${getApiBase()}/${id}`, { username, email });
+      await window.api.put(`/users/${id}`, { username, email });
       showToast(`User "${username}" berhasil diperbarui. ✅`, "success");
     }
 
-    // Reset form
     elemenName.dataset.id = "";
     elemenName.value = "";
     elemenEmail.value = "";
-
-    // Reset mode form ke "Tambah"
     setFormMode("add");
-
     getUser();
   } catch (error) {
     const msg = error.response?.data?.message || error.message;
@@ -78,7 +64,7 @@ formulir.addEventListener("submit", async (e) => {
 async function getUser() {
   setLoading(true);
   try {
-    const response = await axios.get(getApiBase());
+    const response = await window.api.get("/users");
     const users = response.data?.data || [];
 
     updateStats(users);
@@ -115,7 +101,7 @@ async function getUser() {
         <td colspan="5">
           <div class="empty-state">
             <div class="empty-icon">❌</div>
-            <p>Gagal memuat data. Pastikan backend berjalan di port ${port}.</p>
+            <p>Gagal memuat data. Periksa koneksi ke backend.</p>
           </div>
         </td>
       </tr>`;
@@ -127,7 +113,6 @@ async function getUser() {
 
 // ===== RENDER ROW =====
 function tampilkanUser(no, user) {
-  // Buat inisial avatar dari username
   const initials = (user.username || "U")
     .split(" ")
     .map((w) => w[0])
@@ -142,8 +127,8 @@ function tampilkanUser(no, user) {
         <div class="user-cell">
           <div class="user-avatar">${initials}</div>
           <div>
-            <div class="user-name name">${user.username ?? "-"}</div>
-            <div class="user-email email">${user.email ?? "-"}</div>
+            <div class="user-name">${user.username ?? "-"}</div>
+            <div class="user-email">${user.email ?? "-"}</div>
           </div>
         </div>
       </td>
@@ -160,78 +145,63 @@ function tampilkanUser(no, user) {
 
 // ===== HAPUS USER =====
 function hapusUser() {
-  const tombolHapus = document.querySelectorAll(".btn-hapus");
-
-  tombolHapus.forEach((btn) => {
+  document.querySelectorAll(".btn-hapus").forEach((btn) => {
     btn.addEventListener("click", () => {
-      // Simpan id & nama ke modal konfirmasi, lalu tampilkan modal
       const id = btn.dataset.id;
       const name = btn.dataset.name || "user ini";
       document.getElementById("deleteUserName").textContent = name;
-      document.getElementById("deleteConfirmBtn").dataset.id = id;
-      document.getElementById("deleteModal").classList.add("active");
-      document.body.style.overflow = "hidden";
+      // clone untuk bersihkan listener lama
+      const old = document.getElementById("deleteConfirmBtn");
+      const fresh = old.cloneNode(true);
+      old.replaceWith(fresh);
+      fresh.addEventListener("click", async () => {
+        setLoading(true);
+        try {
+          await window.api.delete(`/users/${id}`);
+          showToast("User berhasil dihapus.", "success");
+          closeModal("deleteModal");
+          getUser();
+        } catch (error) {
+          const msg = error.response?.data?.message || error.message;
+          showToast("Gagal menghapus: " + msg, "error");
+          console.log(error.response?.data || error.message);
+        } finally {
+          setLoading(false);
+        }
+      });
+      openModal("deleteModal");
     });
-  });
-
-  // Tombol konfirmasi di dalam modal
-  const confirmBtn = document.getElementById("deleteConfirmBtn");
-  // Bersihkan listener lama supaya tidak ganda
-  confirmBtn.replaceWith(confirmBtn.cloneNode(true));
-  document.getElementById("deleteConfirmBtn").addEventListener("click", async () => {
-    const id = document.getElementById("deleteConfirmBtn").dataset.id;
-    setLoading(true);
-    try {
-      await axios.delete(`${getApiBase()}/${id}`);
-      showToast("User berhasil dihapus.", "success");
-      document.getElementById("deleteModal").classList.remove("active");
-      document.body.style.overflow = "";
-      getUser();
-    } catch (error) {
-      const msg = error.response?.data?.message || error.message;
-      showToast("Gagal menghapus: " + msg, "error");
-      console.log(error.response?.data || error.message);
-    } finally {
-      setLoading(false);
-    }
   });
 }
 
 // ===== EDIT USER =====
 function editUser() {
-  const tombolEdit = document.querySelectorAll(".btn-edit");
-
-  tombolEdit.forEach((btn) => {
+  document.querySelectorAll(".btn-edit").forEach((btn) => {
     btn.addEventListener("click", () => {
       const id = btn.dataset.id;
       const row = btn.closest("tr");
 
-      // Ambil nilai dari cell (class .name dan .email ada di dalam user-cell)
-      const name = row.querySelector(".user-name").innerText;
+      const username = row.querySelector(".user-name").innerText;
       const email = row.querySelector(".user-email").innerText;
 
       const elemenName = document.querySelector("#name");
       const elemenEmail = document.querySelector("#email");
 
       elemenName.dataset.id = id;
-      elemenName.value = name;
+      elemenName.value = username;
       elemenEmail.value = email;
 
-      setFormMode("edit", name);
-
-      // Scroll ke form
+      setFormMode("edit", username);
       document.querySelector(".form-panel").scrollIntoView({ behavior: "smooth", block: "start" });
     });
   });
 }
 
-// ===== SEARCH / FILTER =====
+// ===== SEARCH =====
 function filterUsers() {
   const q = document.getElementById("searchInput").value.toLowerCase();
-  const rows = document.querySelectorAll("#table-user tr");
-  rows.forEach((row) => {
-    const text = row.innerText.toLowerCase();
-    row.style.display = text.includes(q) ? "" : "none";
+  document.querySelectorAll("#table-user tr").forEach((row) => {
+    row.style.display = row.innerText.toLowerCase().includes(q) ? "" : "none";
   });
 }
 
@@ -245,7 +215,7 @@ function resetForm() {
   setFormMode("add");
 }
 
-// ===== FORM MODE (Tambah / Edit) =====
+// ===== FORM MODE =====
 function setFormMode(mode, username = "") {
   const badge = document.getElementById("formModeBadge");
   const title = document.getElementById("formPanelTitle");
@@ -258,7 +228,7 @@ function setFormMode(mode, username = "") {
     title.textContent = "Edit User";
     btn.textContent = "💾 Update";
     info.style.display = "";
-    info.innerHTML = `✏️ Mode edit aktif untuk <strong>${username}</strong>. Klik Reset untuk batal.`;
+    info.innerHTML = `✏️ Mode edit: <strong>${username}</strong>. Klik Reset untuk batal.`;
   } else {
     badge.textContent = "Baru";
     badge.className = "form-mode-badge add";
@@ -268,11 +238,10 @@ function setFormMode(mode, username = "") {
   }
 }
 
-// ===== UPDATE STATS =====
+// ===== STATS =====
 function updateStats(users) {
   document.getElementById("statTotal").textContent = users.length;
 
-  // Hitung user terdaftar 30 hari terakhir
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   const newUsers = users.filter(

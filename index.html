@@ -54,24 +54,59 @@
       font-size: 14px;
     }
 
-    .btn-reset-port {
-      padding: 8px 14px;
-      border-radius: 8px;
-      background: var(--gray-100);
-      border: none;
-      cursor: pointer;
-      font-size: 12px;
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      color: var(--gray-600);
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: all .2s;
+    /* Form panel */
+    .layout-cols {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 24px;
+      align-items: start;
     }
 
-    .btn-reset-port:hover {
-      background: var(--gray-200);
+    @media (max-width: 1100px) {
+      .layout-cols {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-panel {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: calc(var(--header-h) + 28px);
+    }
+
+    .form-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--gray-900);
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--gray-100);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .form-panel-body {
+      padding: 20px 24px 24px;
+    }
+
+    .form-mode-badge {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .form-mode-badge.add {
+      background: var(--green-100);
+      color: var(--green-800);
+    }
+
+    .form-mode-badge.edit {
+      background: #dbeafe;
+      color: #1e40af;
     }
   </style>
 </head>
@@ -115,35 +150,28 @@
         <p>Manajemen pengguna sistem</p>
       </div>
       <div style="display:flex;gap:10px;align-items:center;">
-        <button class="btn-reset-port" onclick="resetPort()">🔧 Ganti Port</button>
         <div class="search-box">
           <span class="search-icon">🔍</span>
           <input class="form-control" id="searchInput" type="text" placeholder="Cari user..." oninput="filterUsers()"
             style="width:220px;" />
         </div>
-        <button class="btn btn-primary" onclick="openAddModal()">+ Tambah User</button>
+        <button class="btn btn-secondary btn-sm" onclick="getUser()">🔄 Refresh</button>
       </div>
     </header>
 
     <main class="page-content">
+
       <!-- Stats -->
-      <div class="stats-grid" id="statsGrid">
+      <div class="stats-grid" style="margin-bottom:24px;">
         <div class="stat-card">
-          <div class="stat-icon blue">👥</div>
+          <div class="stat-icon blue" style="background:#dbeafe;">👥</div>
           <div class="stat-info">
             <div class="stat-value" id="statTotal">—</div>
             <div class="stat-label">Total User</div>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon green">✅</div>
-          <div class="stat-info">
-            <div class="stat-value" id="statActive">—</div>
-            <div class="stat-label">User Aktif</div>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon yellow">⏳</div>
+          <div class="stat-icon green">🆕</div>
           <div class="stat-info">
             <div class="stat-value" id="statNew">—</div>
             <div class="stat-label">User Baru (30 hari)</div>
@@ -151,77 +179,68 @@
         </div>
       </div>
 
-      <!-- Table -->
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">Daftar Pengguna</span>
-          <button class="btn btn-secondary btn-sm" onclick="loadUsers()">🔄 Refresh</button>
+      <!-- Layout: Tabel + Form -->
+      <div class="layout-cols">
+
+        <!-- Tabel -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Daftar Pengguna</span>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Pengguna</th>
+                  <th>Terdaftar</th>
+                  <th>Edit</th>
+                  <th>Hapus</th>
+                </tr>
+              </thead>
+              <tbody id="table-user">
+                <tr>
+                  <td colspan="5">
+                    <div class="empty-state">
+                      <div class="empty-icon">⏳</div>
+                      <p>Memuat data...</p>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Pengguna</th>
-                <th>No. HP</th>
-                <th>Terdaftar</th>
-                <th>Status</th>
-                <th>Aksi</th>
-              </tr>
-            </thead>
-            <tbody id="userTableBody">
-              <tr>
-                <td colspan="6">
-                  <div class="empty-state">
-                    <div class="empty-icon">⏳</div>
-                    <p>Memuat data...</p>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+
+        <!-- Form Panel -->
+        <div class="form-panel">
+          <div class="form-title">
+            <span id="formPanelTitle">Tambah User</span>
+            <span class="form-mode-badge add" id="formModeBadge">Baru</span>
+          </div>
+          <div class="form-panel-body">
+            <form id="user-form">
+              <div class="form-group">
+                <label class="form-label">Username <span style="color:var(--red-500);">*</span></label>
+                <input class="form-control" id="name" type="text" placeholder="Masukkan username" autocomplete="off" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email <span style="color:var(--red-500);">*</span></label>
+                <input class="form-control" id="email" type="email" placeholder="email@contoh.com" autocomplete="off" />
+              </div>
+              <div style="display:flex;gap:10px;margin-top:8px;">
+                <button type="button" class="btn btn-secondary" style="flex:1;" onclick="resetForm()">Reset</button>
+                <button type="submit" class="btn btn-primary" style="flex:2;" id="formSubmitBtn">✅ Simpan</button>
+              </div>
+              <div id="editingInfo" style="display:none;margin-top:12px;padding:10px;
+              background:var(--green-50);border-radius:8px;font-size:12px;color:var(--green-700);">
+              </div>
+            </form>
+          </div>
         </div>
+
       </div>
     </main>
-  </div>
-
-  <!-- MODAL ADD/EDIT USER -->
-  <div class="modal-overlay" id="userModal">
-    <div class="modal">
-      <div class="modal-header">
-        <span class="modal-title" id="userModalTitle">Tambah User</span>
-        <button class="modal-close" onclick="closeModal('userModal')">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label class="form-label">Nama Lengkap</label>
-          <input class="form-control" id="fieldNama" type="text" placeholder="Masukkan nama lengkap" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Email</label>
-          <input class="form-control" id="fieldEmail" type="email" placeholder="email@contoh.com" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">No. HP / WhatsApp</label>
-          <input class="form-control" id="fieldPhone" type="tel" placeholder="08xxxxxxxxxx" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Password</label>
-          <input class="form-control" id="fieldPassword" type="password" placeholder="Password" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Status</label>
-          <select class="form-control" id="fieldStatus">
-            <option value="ACTIVE">Aktif</option>
-            <option value="INACTIVE">Tidak Aktif</option>
-          </select>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeModal('userModal')">Batal</button>
-        <button class="btn btn-primary" onclick="saveUser()">Simpan</button>
-      </div>
-    </div>
   </div>
 
   <!-- MODAL CONFIRM DELETE -->
@@ -232,12 +251,14 @@
         <button class="modal-close" onclick="closeModal('deleteModal')">✕</button>
       </div>
       <div class="modal-body">
-        <p style="color:var(--gray-600);">Apakah kamu yakin ingin menghapus user <strong id="deleteUserName"></strong>?
-          Tindakan ini tidak dapat dibatalkan.</p>
+        <p style="color:var(--gray-600);">
+          Yakin ingin menghapus user <strong id="deleteUserName"></strong>?
+          Tindakan ini tidak dapat dibatalkan.
+        </p>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeModal('deleteModal')">Batal</button>
-        <button class="btn btn-danger" onclick="confirmDelete()">Ya, Hapus</button>
+        <button class="btn btn-danger" id="deleteConfirmBtn">🗑️ Ya, Hapus</button>
       </div>
     </div>
   </div>
